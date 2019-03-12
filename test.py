@@ -39,7 +39,7 @@ def test(
 
     # Get dataloader
     # dataloader = torch.utils.data.DataLoader(LoadImagesAndLabels(test_path), batch_size=batch_size)
-    dataloader = LoadImagesAndLabels(test_path, batch_size=batch_size, img_size=img_size)
+    dataloader = LoadImagesAndLabelsDarknetStyle(test_path, batch_size=batch_size, img_size=img_size)
 
     mean_mAP, mean_R, mean_P, seen = 0.0, 0.0, 0.0, 0
     print('%11s' * 5 % ('Image', 'Total', 'P', 'R', 'mAP'))

@@ -36,7 +36,7 @@ def train(
     model = Darknet(cfg, img_size)
 
     # Get dataloader
-    dataloader = LoadImagesAndLabels(train_path, batch_size, img_size, multi_scale=multi_scale, augment=True)
+    dataloader = LoadImagesAndLabelsDarknetStyle(train_path, batch_size, img_size, multi_scale=multi_scale, augment=True)
 
     lr0 = 0.001
     cutoff = -1  # backbone reaches to cutoff layer
