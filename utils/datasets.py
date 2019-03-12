@@ -308,7 +308,6 @@ class LoadImagesAndLabelsDarknetStyle:  # for training
                 labels[:, 2] = ratio * labels0[:, 2] + padh
                 labels[:, 3] = ratio * labels0[:, 3] + padw
                 labels[:, 4] = ratio * labels0[:, 4] + padh
-                print(labels)
                 #labels[:, 1:5] = np.clip(labels[:, 1:5], 0, np.inf)
             else:
                 labels = np.array([])
