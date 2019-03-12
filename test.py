@@ -24,16 +24,17 @@ def test(
     # Configure run
     data_cfg_dict = parse_data_cfg(data_cfg)
     nC = int(data_cfg_dict['classes'])  # number of classes (80 for COCO)
+    print("testint", weights)
     test_path = data_cfg_dict['valid']
 
     # Initialize model
     model = Darknet(cfg, img_size)
 
     # Load weights
-    if weights.endswith('.pt'):  # pytorch format
-        model.load_state_dict(torch.load(weights, map_location='cpu')['model'])
-    else:  # darknet format
-        load_darknet_weights(model, weights)
+    # if weights.endswith('.pt'):  # pytorch format
+    model.load_state_dict(torch.load(weights, map_location='cpu')['model'])
+    # else:  # darknet format
+#     load_darknet_weights(model, weights)
 
     model.to(device).eval()
 

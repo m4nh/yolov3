@@ -1,6 +1,6 @@
 classes=2
-train=/Users/daniele/Desktop/Lavoro/CopemoTest/TestFebbraio2019/gt/dataset_copemo18_trainables/conveyor_3.txt
-valid=/Users/daniele/Desktop/Lavoro/CopemoTest/TestFebbraio2019/gt/dataset_copemo18_trainables/conveyor_3.txt
-names=data/pills.names
+train=/tmp/copemo_goodone/train.txt
+valid=/tmp/copemo_goodone/test.txt
+names=data/binary.names
 backup=backup/
 eval=coco

@@ -13,7 +13,7 @@ def detect(
         cfg,
         weights,
         images,
-        output='output',  # output folder
+        output='/tmp/yolov3_output',  # output folder
         img_size=416,
         conf_thres=0.3,
         nms_thres=0.45,
