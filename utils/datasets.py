@@ -225,7 +225,6 @@ class LoadImagesAndLabels:  # for training
 class LoadImagesAndLabelsDarknetStyle:  # for training
     def __init__(self, path, batch_size=1, img_size=608, multi_scale=False, augment=False):
 
-
         with open(path, 'r') as file:
             self.rows = file.readlines()
 
@@ -314,7 +313,7 @@ class LoadImagesAndLabelsDarknetStyle:  # for training
 
             # Augment image and labels
             if self.augment:
-                img, labels, M = random_affine(img, labels, degrees=(-5, 5), translate=(0.10, 0.10), scale=(0.90, 1.10))
+                img, labels, M = random_affine(img, labels, degrees=(-15, 15), translate=(0.30, 0.30), scale=(0.80, 1.20))
 
             plotFlag = False
             if plotFlag:
@@ -338,7 +337,7 @@ class LoadImagesAndLabelsDarknetStyle:  # for training
                         labels[:, 1] = 1 - labels[:, 1]
 
                 # random up-down flip
-                ud_flip = False
+                ud_flip = True
                 if ud_flip & (random.random() > 0.5):
                     img = np.flipud(img)
                     if nL > 0:
