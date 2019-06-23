@@ -1,6 +1,6 @@
 classes=2
-train=/tmp/copemo_goodone/train.txt
-valid=/tmp/copemo_goodone/test.txt
+train=/tmp/copemo_train.txt
+valid=/tmp/copemo_val.txt
 names=data/binary.names
 backup=backup/
 eval=coco
