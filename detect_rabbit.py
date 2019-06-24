@@ -7,6 +7,7 @@ from sys import platform
 from models import *
 from utils.datasets import *
 from utils.utils import *
+from babylon.network import BMessage, SimpleChannel
 
 
 def detect(
@@ -19,12 +20,10 @@ def detect(
         nms_thres=0.45,
         save_txt=False,
         save_images=True,
-        webcam=False
+        webcam=False,
+        channel=None
 ):
     device = torch_utils.select_device()
-    if os.path.exists(output):
-        shutil.rmtree(output)  # delete output folder
-    os.makedirs(output)  # make new output folder
 
     # Initialize model
     model = Darknet(cfg, img_size)
@@ -41,15 +40,16 @@ def detect(
     model.to(device).eval()
 
     # Set Dataloader
-    if webcam:
-        save_images = False
-        dataloader = LoadWebcam(img_size=img_size)
-    else:
-        dataloader = LoadImages(images, img_size=img_size)
+    save_images = False
+    dataloader = LoadWebcam(img_size=img_size)
 
     # Get classes and colors
     classes = load_classes(parse_data_cfg('cfg/coco.data')['names'])
     colors = [[random.randint(0, 255), random.randint(0, 255), random.randint(0, 255)] for _ in range(len(classes))]
+
+
+
+
 
     for i, (path, img, im0) in enumerate(dataloader):
         t = time.time()
@@ -67,6 +67,12 @@ def detect(
         pred = model(img)
         pred = pred[pred[:, :, 4] > conf_thres]  # remove boxes < threshold
 
+        image_center = np.array([im0.shape[1] * 0.5, im0.shape[0] * 0.5]).astype(float)
+        min_score = 0.5
+        super_target_radius = 50
+        target_labels = [0]
+        min_target = None
+
         if len(pred) > 0:
             # Run NMS on predictions
             detections = non_max_suppression(pred.unsqueeze(0), conf_thres, nms_thres)[0]
@@ -74,34 +80,87 @@ def detect(
             # Rescale boxes from 416 to true image size
             scale_coords(img_size, detections[:, :4], im0.shape).round()
 
+            # print(detections)
+
             # Print results to screen
             unique_classes = detections[:, -1].cpu().unique()
             for c in unique_classes:
                 n = (detections[:, -1].cpu() == c).sum()
-                print('%g %ss' % (n, classes[int(c)]), end=', ')
+                # print('%g %ss' % (n, classes[int(c)]), end=', ')
 
-            # Draw bounding boxes and labels of detections
+            feasible_targets = []
+            min_distance = 1000000
+
+
             for x1, y1, x2, y2, conf, cls_conf, cls in detections:
-                if save_txt:  # Write to file
-                    with open(save_path + '.txt', 'a') as file:
-                        file.write('%g %g %g %g %g %g\n' %
-                                   (x1, y1, x2, y2, cls, cls_conf * conf))
-
+                row = [x1, y1, x2, y2, conf, cls_conf, cls]
                 # Add bbox to the image
                 label = '%s %.2f' % (classes[int(cls)], conf)
-                plot_one_box([x1, y1, x2, y2], im0, label=label, color=colors[int(cls)])
+                # plot_one_box([x1, y1, x2, y2], im0, label=label, color=colors[int(cls)])
+
+                label = int(cls)
+                score = conf
+                if score < min_score:
+                    continue
+                tl = np.array([x1, y1])
+                br = np.array([x2, y2])
+                center = ((tl + br) * 0.5).astype(int)
+                color = colors[int(cls)]
+                cv2.circle(im0, (center[0], center[1]), 50, color, 10)
+
+                if label in target_labels:
+                    feasible_targets.append(row)
+                    distance = np.linalg.norm(image_center - center)
+                    if distance < min_distance:
+                        min_distance = distance
+                        min_target = row
+                    dd = 20
+                    cv2.line(im0, (center[0] - dd, center[1] - dd), (center[0] + dd, center[1] + dd), color, 3)
+                    cv2.line(im0, (center[0] + dd, center[1] - dd), (center[0] - dd, center[1] + dd), color, 3)
+
+        cv2.circle(im0, (int(image_center[0]), int(image_center[1])), super_target_radius, (0, 255, 0), 2)
+
+        if min_target is not None:
+
+            tl = np.array(min_target[0:2])
+            br = np.array(min_target[2:4])
+            center = ((tl + br) * 0.5).astype(int)
+            super_target = False
+
+            if min_distance < super_target_radius:
+                super_target = True
+
+            color = (255, 255, 255)
+            if super_target:
+                color = (0, 255, 0)
+            cv2.line(im0, (center[0] - dd, center[1] - dd), (center[0] + dd, center[1] + dd), color, 8)
+            cv2.line(im0, (center[0] + dd, center[1] - dd), (center[0] - dd, center[1] + dd), color, 8)
+
+            if not super_target:
+                message = BMessage(action="target_acquired")
+                message.addField("target", np.array(center))
+                print("Sending Target:", np.array(center))
+                channel.publish(message)
+            else:
+                message = BMessage(action="super_target_acquired")
+                message.addField("target", np.array(center))
+                print("Sending Super Target:", np.array(center))
+                channel.publish(message)
+        else:
+            message = BMessage(action="no_target_acquired")
+            print("Sending No Target:")
+            channel.publish(message)
+            pass
+
 
         dt = time.time() - t
-        print('Done. (%.3fs)' % dt)
+        # print('Done. (%.3fs)' % dt)
 
-        if save_images:  # Save generated image with detections
-            cv2.imwrite(save_path, im0)
 
         if webcam:  # Show live webcam
             cv2.imshow(weights, im0)
 
-    if save_images and (platform == 'darwin'):  # linux/macos
-        os.system('open ' + output + ' ' + save_path)
+
 
 
 if __name__ == '__main__':
@@ -115,6 +174,8 @@ if __name__ == '__main__':
     opt = parser.parse_args()
     print(opt)
 
+    channel = SimpleChannel(topic_name='vision_module')
+
     with torch.no_grad():
         detect(
             opt.cfg,
@@ -123,5 +184,6 @@ if __name__ == '__main__':
             img_size=opt.img_size,
             conf_thres=opt.conf_thres,
             nms_thres=opt.nms_thres,
-            webcam=False
+            webcam=True,
+            channel=channel
         )
