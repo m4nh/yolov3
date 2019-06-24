@@ -73,7 +73,7 @@ class LoadWebcam:  # for inference
         ret_val, img0 = self.cam.read()
         assert ret_val, 'Webcam Error'
         img_path = 'webcam_%g.jpg' % self.count
-        img0 = cv2.flip(img0, 1)
+        #img0 = cv2.flip(img0, 1)
 
         # Padded resize
         img, _, _, _ = letterbox(img0, height=self.height)

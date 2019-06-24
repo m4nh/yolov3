@@ -68,7 +68,7 @@ def detect(
         pred = pred[pred[:, :, 4] > conf_thres]  # remove boxes < threshold
 
         image_center = np.array([im0.shape[1] * 0.5, im0.shape[0] * 0.5]).astype(float)
-        min_score = 0.1
+        min_score = 0.5
         super_target_radius = 50
         target_labels = [0]
         min_target = None
