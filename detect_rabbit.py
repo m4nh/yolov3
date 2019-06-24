@@ -9,10 +9,15 @@ from utils.datasets import *
 from utils.utils import *
 from babylon.network import BMessage, SimpleChannel
 
+mycolors = [
+    (0,0,255),
+    (0,255,0)
+]
 
 def detect(
         cfg,
         weights,
+        data_cfg,
         images,
         output='/tmp/yolov3_output',  # output folder
         img_size=416,
@@ -44,11 +49,11 @@ def detect(
     dataloader = LoadWebcam(img_size=img_size)
 
     # Get classes and colors
-    classes = load_classes(parse_data_cfg('cfg/coco.data')['names'])
+    classes = load_classes(parse_data_cfg(data_cfg)['names'])
     colors = [[random.randint(0, 255), random.randint(0, 255), random.randint(0, 255)] for _ in range(len(classes))]
 
 
-
+    save_counter = 0
 
 
     for i, (path, img, im0) in enumerate(dataloader):
@@ -159,6 +164,11 @@ def detect(
 
         if webcam:  # Show live webcam
             cv2.imshow(weights, im0)
+            im0 = cv2.resize(im0, (640,480))
+
+            # outname = str(save_counter).zfill(5)
+            # cv2.imwrite("/tmp/bonori/{}.jpg".format(outname), im0)
+            # save_counter += 1
 
 
 
@@ -166,6 +176,7 @@ def detect(
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--cfg', type=str, default='cfg/yolov3.cfg', help='cfg file path')
+    parser.add_argument('--data_cfg', type=str, default='cfg/coco.data', help='coco.data file path')
     parser.add_argument('--weights', type=str, default='weights/yolov3.weights', help='path to weights file')
     parser.add_argument('--images', type=str, default='data/samples', help='path to images')
     parser.add_argument('--img-size', type=int, default=32 * 13, help='size of each image dimension')
@@ -180,6 +191,7 @@ if __name__ == '__main__':
         detect(
             opt.cfg,
             opt.weights,
+            opt.data_cfg,
             opt.images,
             img_size=opt.img_size,
             conf_thres=opt.conf_thres,
